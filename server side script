@@ -1,0 +1,421 @@
+# server side script for the combat 
+game.ReplicatedStorage.MainEvent.OnServerEvent:Connect(function(plr)
+	spawn(function()
+		plr.Character.Humanoid.WalkSpeed = 7
+		task.wait(.5)
+		plr.Character.Humanoid.WalkSpeed = 16
+	end)
+
+	local hitbox = Instance.new("Part")
+	
+	hitbox.Parent = workspace
+	hitbox.CanCollide = false
+	hitbox.Anchored = true
+	hitbox.Size = Vector3.new(7,7,7)
+	hitbox.BrickColor = BrickColor.new("Really red")
+	hitbox.Transparency = 1
+	hitbox.CFrame = plr.Character.HumanoidRootPart.CFrame * CFrame.new(0,0,-5)
+	game.Debris:AddItem(hitbox,1)
+	
+	local BV2 = Instance.new("BodyVelocity")
+	BV2.MaxForce, BV2.Velocity = Vector3.new(5e4, 5e2, 5e4), plr.Character.HumanoidRootPart.CFrame.lookVector * 10
+	BV2.Parent = plr.Character.HumanoidRootPart
+	game.Debris:AddItem(BV2, 0.16)
+
+	
+	local hitboxcooldown = false
+	hitbox.Touched:Connect(function(hit)
+	if hit.Parent.Name ~= plr.Name and hit.Parent:FindFirstChild("Humanoid") then
+		if hitboxcooldown == true then return end
+		hitboxcooldown = true
+		
+		hit.Parent:FindFirstChild("Humanoid"):TakeDamage(5)
+		
+		local humanoid = hit.Parent:FindFirstChild("Humanoid")
+        local existingTag = humanoid:FindFirstChild("creator")
+        if existingTag then
+            existingTag:Destroy()
+        end
+        local creatorTag = Instance.new("ObjectValue")
+        creatorTag.Name = "creator"
+        creatorTag.Value = plr
+        creatorTag.Parent = humanoid
+		game:GetService("Debris"):AddItem(creatorTag, 2)
+		
+		local vfx = game.ReplicatedStorage.VFX.Attachment:Clone()
+		vfx.Parent = hit.Parent.HumanoidRootPart
+		local sound = script.Punch:Clone()
+		sound.Parent = hit.Parent.HumanoidRootPart
+		sound:Play()
+		game.Debris:AddItem(sound, 2)
+		
+		local BV = Instance.new("BodyVelocity")
+		BV.MaxForce, BV.Velocity = Vector3.new(5e4, 5e2, 5e4), plr.Character.HumanoidRootPart.CFrame.lookVector * 10
+		BV.Parent = hit.Parent.HumanoidRootPart
+		game.Debris:AddItem(BV, 0.16)
+		
+		local bool = Instance.new("BoolValue")
+		bool.Name = "Stunned"
+		bool.Parent = hit.Parent
+		game.Debris:AddItem(bool, 1)
+
+		
+		spawn(function()
+			for i,v in vfx:GetChildren() do
+				if v:IsA("ParticleEmitter") then
+					v:Emit(v:GetAttribute("EmitCount"))
+				end
+			end
+		end)
+		game:GetService("ContentProvider"):PreloadAsync({vfx})
+		game.Debris:AddItem(vfx, 1.5)
+		task.wait(1)
+		hitboxcooldown = false
+			
+	end
+	end)
+	
+end)
+# script for blue ball skill
+local HollowPurpleEvent = game.ReplicatedStorage:WaitForChild("HollowPurpleEvent")
+local TS = game:GetService("TweenService")
+local SS = game:GetService("SoundService")
+
+local Blue = game.ServerStorage:WaitForChild("PartBlue")
+
+HollowPurpleEvent.OnServerEvent:Connect(function(plr, Endpos)
+	local Character = plr.Character
+	
+	local BlueClone = Blue:Clone()
+	BlueClone.CFrame = Character.HumanoidRootPart.CFrame * CFrame.new(-1, 3, -10)
+	BlueClone.Parent = game.Workspace
+	
+	local StartPos = BlueClone.Position
+	local Direction = (Endpos - StartPos).Unit*200
+	local RayCastParams = RaycastParams.new()
+	RayCastParams.FilterType = Enum.RaycastFilterType.Exclude
+	RaycastParams.FilterDescendantsInstances = {Character:GetDescendants()}
+	
+	local Duration = (Endpos - StartPos). Magnitude / 70
+	local BlueTween = TS:Create(BlueClone, TweenInfo.new(Duration, Enum.EasingStyle.Cubic, Enum.EasingStyle.Out), {Position = Endpos})
+	BlueTween:Play()
+	
+	local RayCast = workspace:Raycast(StartPos, Direction, RayCastParams)
+	
+	if RayCast then
+		wait(Duration - 0.5)
+		local 
+	end
+end)
+
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local blueAbilityEvent = ReplicatedStorage:WaitForChild("blueAbility")
+local debris = game:GetService("Debris")
+local RunService = game:GetService("RunService")
+
+local anim = Instance.new("Animation")
+anim.AnimationId = "rbxassetid://75381997724618"
+
+local sound = Instance.new("Sound")
+sound.SoundId = "rbxassetid://102891804208309"
+sound.Volume = 0.1
+sound.PlayOnRemove = false
+
+local blueBallTemplate = ReplicatedStorage:WaitForChild("blueBall")
+local pullRadius = 15
+local pullStrength = 500
+local ballLifetime = 3
+local BlueClone = blueBallTemplate:Clone()
+
+blueAbilityEvent.OnServerEvent:Connect(function(player)
+	
+	local char = player.Character
+	if not char then return end
+
+	local root = char:FindFirstChild("HumanoidRootPart")
+	if not root then return end
+
+	local hum = char:FindFirstChildOfClass("Humanoid")
+	if not hum then return end
+
+	local track = hum:LoadAnimation(anim)
+	track:Play()
+
+	-- Spawn the ball
+	local ball = blueBallTemplate:Clone()
+	ball.Size = Vector3.new(5, 5, 5)
+	ball.CFrame = root.CFrame + root.CFrame.LookVector * 3
+	ball.Parent = workspace
+
+	-- Give it forward velocity
+	local velocity = Instance.new("BodyVelocity")
+	velocity.Velocity = root.CFrame.LookVector * 100
+	velocity.MaxForce = Vector3.new(1e5, 1e5, 1e5)
+	velocity.Parent = ball
+
+	-- Spinning ring effect (optional)
+	local ring = Instance.new("Part")
+	ring.Name = "SpinRing"
+	ring.Size = Vector3.new(10, 0.2, 0.2)
+	ring.Anchored = false
+	ring.CanCollide = false
+	ring.Transparency = 1
+	ring.Material = Enum.Material.Neon
+	ring.Color = Color3.fromRGB(255, 253, 251)
+	ring.Shape = Enum.PartType.Block
+	ring.CFrame = ball.CFrame * CFrame.new(0, 0.5, 0)
+	ring.Parent = ball
+
+	local weld = Instance.new("WeldConstraint")
+	weld.Part0 = ball
+	weld.Part1 = ring
+	weld.Parent = ring
+
+	local spinning = true
+	local spinConn = RunService.Heartbeat:Connect(function()
+		if spinning and ring and ring.Parent then
+			ring.CFrame = ring.CFrame * CFrame.Angles(0, math.rad(3), math.rad(2))
+		end
+	end)
+	
+	sound.Parent = workspace
+	sound:Play()
+	
+	ball.Touched:Connect(function(hit)
+		local hitChar = hit:FindFirstAncestorOfClass("Model")
+		local hitPlayer = hitChar and game.Players:GetPlayerFromCharacter(hitChar)
+
+		if hitChar and hitPlayer and hitPlayer ~= player then
+			local hitHum = hitChar:FindFirstChildOfClass("Humanoid")
+			local hitRoot = hitChar:FindFirstChild("HumanoidRootPart")
+			if hitHum and hitRoot then
+				local existingTag = hitHum:FindFirstChild("creator")
+				if existingTag then
+					existingTag:Destroy()
+				end
+				local creatorTag = Instance.new("ObjectValue")
+				creatorTag.Name = "creator"
+				creatorTag.Value = player 
+				creatorTag.Parent = hitHum
+				debris:AddItem(creatorTag, 2)
+				hitHum:TakeDamage(1)
+			end
+		end
+	end)
+
+	-- Cleanup after lifetime
+	task.delay(ballLifetime, function()
+		spinning = false
+		if ball and ball.Parent then
+			ball:Destroy()
+		end
+	end)
+
+	debris:AddItem(ball, ballLifetime + 2)
+end)
+# script for welding
+local PS = game:GetService('Players')
+local SS = game:GetService('ServerStorage')
+
+local ReferenceDummy : Model = SS.ReferenceDummy
+
+local function weld(partA : BasePart, partB : BasePart, offsetCFrame : CFrame)
+	partA.CFrame = partB.CFrame * offsetCFrame
+	
+	local weldConstraint = Instance.new('WeldConstraint')
+	weldConstraint.Part0 = partA
+	weldConstraint.Part1 = partB
+	weldConstraint.Parent = partA
+end
+
+local function onCharacterAdded(character : Model)
+	local newWeld = ReferenceDummy.CER:Clone()
+	local weldPart = character:WaitForChild(newWeld.WeldPart.Value.Name)
+	weld(newWeld, weldPart, newWeld.WeldPart.Value.CFrame:Inverse() * newWeld.CFrame)
+	newWeld.Parent = character
+	local newWeldL = ReferenceDummy.CEL:Clone()
+	local weldPartL = character:WaitForChild(newWeldL.WeldPart.Value.Name)
+	weld(newWeldL, weldPartL, newWeldL.WeldPart.Value.CFrame:Inverse() * newWeldL.CFrame)
+	newWeldL.Parent = character
+end
+
+PS.PlayerAdded:Connect(function(player : Player)
+	player.CharacterAdded:Connect(onCharacterAdded)
+end)
+
+for i, player in pairs (PS:GetPlayers()) do
+	player.CharacterAdded:Connect(onCharacterAdded)
+	
+	if (player.Character) then
+		onCharacterAdded(player.Character)
+	end
+end
+
+# script for time stop
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local TweenService = game:GetService("TweenService")
+local Lighting = game:GetService("Lighting")
+
+local event = ReplicatedStorage:WaitForChild("timeAbility")
+local timeDome = ReplicatedStorage:WaitForChild("timeDome")
+local VFXHandler = require(ReplicatedStorage:WaitForChild("VFXHandler"))
+
+-- Animation
+local anim = Instance.new("Animation")
+anim.AnimationId = "rbxassetid://131445320966134"
+
+-- Sound
+local sound = Instance.new("Sound")
+sound.SoundId = "rbxassetid://5294253171"
+sound.Volume = 0.5
+sound.PlayOnRemove = false
+
+-- Keep track of frozen players
+local frozenPlayers = {}
+
+-- Color correction effect
+local cc = Lighting:FindFirstChild("TimeStopCC") or Instance.new("ColorCorrectionEffect")
+cc.Name = "TimeStopCC"
+cc.Parent = Lighting
+cc.Saturation = 0
+
+event.OnServerEvent:Connect(function(player)
+	local char = player.Character
+	local root = char and char:FindFirstChild("HumanoidRootPart")
+	local hum = char and char:FindFirstChildOfClass("Humanoid")
+
+	if not root or not hum then return end
+	if frozenPlayers[player] then return end -- prevent double activation
+
+	print(player.Name .. " used Time Ability!")
+
+	-- Parameters
+	local db = 3 -- duration of timestop
+	local range = 50
+
+	-- Clone and setup dome
+	local dome = timeDome:Clone()
+	dome.CFrame = root.CFrame
+	dome.Size = Vector3.new(range, range, range)
+	dome.Anchored = true
+	dome.CanCollide = false
+	dome.Transparency = 0.5
+	dome.Parent = workspace
+
+	-- Spawn VFX
+	VFXHandler.SpawnSlash(root.CFrame * CFrame.new(0,0,-3))
+
+	-- Play animation
+	local track = hum:LoadAnimation(anim)
+	track:Play()
+
+	-- Play sound
+	sound.Parent = workspace
+	sound:Play()
+
+	-- Spin ring effect
+	local ring = Instance.new("Part")
+	ring.Name = "SpinRing"
+	ring.Size = Vector3.new(range*0.5, 0.2, 0.2)
+	ring.Anchored = false
+	ring.CanCollide = false
+	ring.Transparency = 0.4
+	ring.Material = Enum.Material.Neon
+	ring.Color = Color3.fromRGB(255, 253, 251)
+	ring.Shape = Enum.PartType.Block
+	ring.CFrame = dome.CFrame * CFrame.new(0, range/2 + 2, 0)
+	ring.Parent = dome
+
+	local weld = Instance.new("WeldConstraint")
+	weld.Part0 = dome
+	weld.Part1 = ring
+	weld.Parent = ring
+
+	local spinning = true
+	local connection
+	connection = RunService.Heartbeat:Connect(function()
+		if spinning and ring and ring.Parent then
+			ring.CFrame = ring.CFrame * CFrame.Angles(0, math.rad(-2), 0)
+		end
+	end)
+
+	-- Freeze all players in range
+	local affectedPlayers = {}
+	for _, plr in ipairs(Players:GetPlayers()) do
+		if plr ~= player and plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") then
+			local hrp = plr.Character.HumanoidRootPart
+			if (hrp.Position - root.Position).Magnitude <= range then
+				local phum = plr.Character:FindFirstChildOfClass("Humanoid")
+				if phum then
+					phum.WalkSpeed = 0
+					phum.JumpPower = 0
+				end
+				for _, part in ipairs(plr.Character:GetChildren()) do
+					if part:IsA("BasePart") then
+						part.Anchored = true
+					end
+				end
+				frozenPlayers[plr] = true
+				table.insert(affectedPlayers, plr)
+				print(plr.Name .. " frozen!")
+			end
+		end
+	end
+
+	-- Darken screen
+	TweenService:Create(cc, TweenInfo.new(0.5), {Saturation = -1}):Play()
+
+	-- Cleanup after db seconds
+	task.delay(db, function()
+		spinning = false
+		connection:Disconnect()
+		ring:Destroy()
+		dome:Destroy()
+
+		-- Unfreeze players
+		for _, plr in ipairs(affectedPlayers) do
+			local phum = plr.Character and plr.Character:FindFirstChildOfClass("Humanoid")
+			if phum then
+				phum.WalkSpeed = 16
+				phum.JumpPower = 50
+			end
+			if plr.Character then
+				for _, part in ipairs(plr.Character:GetChildren()) do
+					if part:IsA("BasePart") then
+						part.Anchored = false
+					end
+				end
+			end
+			frozenPlayers[plr] = nil
+			print("Time returned for " .. plr.Name)
+		end
+
+		-- Restore lighting
+		TweenService:Create(cc, TweenInfo.new(0.5), {Saturation = 0}):Play()
+	end)
+end)
+
+# script for updating server side hp bar
+
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Players = game:GetService("Players")
+local healthUpdateEvent = ReplicatedStorage:WaitForChild("HealthUpdateEvent")
+
+Players.PlayerAdded:Connect(function(player)
+	player.CharacterAdded:Connect(function(character)
+		local humanoid = character:WaitForChild("Humanoid")
+		local head = character:WaitForChild("Head")
+		local healthBar = ReplicatedStorage.HealthBar:Clone()
+		healthBar.Adornee = head
+		healthBar.Parent = head
+		local function updateAllClients()
+			local healthPercent = humanoid.Health / humanoid.MaxHealth
+			healthUpdateEvent:FireAllClients(character, healthPercent)
+		end
+
+		humanoid.HealthChanged:Connect(updateAllClients)
+		updateAllClients()
+	end)
+end)
