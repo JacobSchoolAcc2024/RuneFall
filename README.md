@@ -26,8 +26,8 @@ Colorblind-friendly filters.
 
 How to Access and Play:
 
-Download Roblox.
-Search for "Shibuya Battleground" in the Games section.
+Download Roblox and sign up for a roblox account(log in if you already have one).
+Click the share link we provide.
 Join the game.
 Use the on-screen tutorial and set up page:
 Move with WASD keys.
