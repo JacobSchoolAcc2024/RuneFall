@@ -1,0 +1,135 @@
+#script for hp bar updating
+local healthUpdateEvent = game.ReplicatedStorage:WaitForChild("HealthUpdateEvent")
+
+healthUpdateEvent.OnClientEvent:Connect(function(character, healthPercent)
+	if character and character:FindFirstChild("Head") then
+		local healthBar = character.Head:FindFirstChild("HealthBar")
+		if healthBar then
+			healthBar.HealthBarBackground.HealthBarFill.Size = UDim2.new(healthPercent, 0, 1, 0)
+			healthBar.HealthBarBackground.HealthText.Text = math.floor(healthPercent * 100).."%"
+			if healthPercent > 0.8 then
+				healthBar.HealthBarBackground.HealthBarFill.BackgroundColor3 = Color3.new(0, 1, 0)
+			elseif healthPercent > 0.6 then
+				healthBar.HealthBarBackground.HealthBarFill.BackgroundColor3 = Color3.new(1, 1, 0)
+			elseif healthPercent > 0.4 then
+				healthBar.HealthBarBackground.HealthBarFill.BackgroundColor3 = Color3.new(1, 0.666667, 0)
+			else
+				healthBar.HealthBarBackground.HealthBarFill.BackgroundColor3 = Color3.new(1, 0, 0)
+			end
+		end
+	end
+end)
+
+local Player = game.Players.LocalPlayer
+local StarterGui = game:GetService("StarterGui")
+StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.Health, false)
+
+#script for managing impact frame
+
+local lightingService = game:GetService('Lighting')
+local whiteBgImpactFrame = lightingService:WaitForChild('WhiteBgImpactFrame')
+local blackBgImpactFrame = lightingService:WaitForChild('BlackBgImpactFrame')
+
+local impactFrameDuration = 0.17
+
+ImpactFramesEvent.OnClientEvent:Connect(function(normalObjects)
+	
+end)
+task.wait(1.22)
+
+local lightingService = game:GetService('Lighting')
+local if1 = lightingService:FindFirstChild('IF1')
+local if2 = lightingService:FindFirstChild('IF2')
+local if3 = lightingService:FindFirstChild('IF3')
+
+local charHighlight = Instance.new('Highlight')
+charHighlight.Parent = charHighlight
+charHighlight.FillTransparency = 0
+charHighlight.OutlineTransparency = 0
+
+if1.Enabled = true
+
+charHighlight.OutlineColor = Color3.new(0.631373, 0, 0.0117647)
+charHighlight.FillColor = Color3.new(1, 1, 1)
+
+task.wait(0.05)
+
+if1.Enabled = false
+if2.Enabled = true
+
+charHighlight.OutlineColor = Color3.new(1, 1, 1)
+charHighlight.FillColor = Color3.new(0, 0, 0)
+
+task.wait(0.05)
+
+if2.Enabled = false
+if3.Enabled = true
+
+charHighlight.OutlineColor = Color3.new(0.631373, 0, 0.0117647)
+charHighlight.FillColor = Color3.new(1, 1, 1)
+charHighlight.OutlineTransparency = 0.5
+
+task.wait(0.05)
+
+if3.Enabled = false
+
+charHighlight:Destroy()
+
+#script for slashes
+local player = game.Players.LocalPlayer
+local char = player.Character or player.CharacterAdded:Wait()
+local debris = game:GetService("Debris")
+local tweenService = game:GetService("TweenService")
+
+local function spawnCircleSlash()
+	local root = char:FindFirstChild("HumanoidRootPart")
+	if not root then return end
+
+	local radius = 15 -- distance from player
+	local count = 10 -- number of slashes
+
+	for i = 1, count do
+		local angle = (2 * math.pi / count) * i
+		local offset = Vector3.new(math.cos(angle) * radius, 0, math.sin(angle) * radius)
+		local slashPosition = root.Position + offset
+
+		local slashPart = Instance.new("Part")
+		slashPart.Size = Vector3.new(10, 0.2, 1)
+		slashPart.Color = Color3.fromRGB(40, 15, 117)
+		slashPart.Material = Enum.Material.Neon
+		slashPart.Anchored = true
+		slashPart.CanCollide = false
+		slashPart.Transparency = 0
+
+		local lookAtCFrame = CFrame.lookAt(slashPosition, root.Position) -- make it face the center
+		slashPart.CFrame = lookAtCFrame
+		slashPart.Parent = workspace
+
+		-- Fade out
+		local tween = tweenService:Create(slashPart, TweenInfo.new(1), {Transparency = 1})
+		tween:Play()
+
+		-- Spin
+		task.spawn(function()
+			for _ = 1, 100 do
+				if slashPart then
+					slashPart.CFrame = slashPart.CFrame * CFrame.Angles(0, math.rad(10), 0)
+					task.wait(0.01)
+				end
+			end
+		end)
+
+		debris:AddItem(slashPart, 2)
+	end
+end
+
+-- Press "M" to spawn slashes
+game:GetService("UserInputService").InputBegan:Connect(function(input, gameProcessed)
+	if not gameProcessed and input.KeyCode == Enum.KeyCode.M then
+		for i = 1, 100 do
+			spawnCircleSlash()
+			task.wait(.1)
+		end
+	end
+end)
+
