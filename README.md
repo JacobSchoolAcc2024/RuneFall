@@ -27,7 +27,8 @@ Colorblind-friendly filters.
 How to Access and Play:
 
 Download Roblox.
-Search for "Shibuya Battleground" in the Games section.
+Create an account.
+Paste this link in a new browser after you have an account: https://www.roblox.com/games/135568066889602/Shibuya-Battlegrounds
 Join the game.
 Use the on-screen tutorial and set up page:
 Move with WASD keys.
@@ -35,3 +36,5 @@ Press F to stop time nearby.
 Press R to pull and punch rivals.
 Press E to shoot a blue energy ball.
 Check you KDA on the leaderboard.
+
+Link to short video explaining our project (put it to 2x speed): https://youtu.be/xSGlkELbrEI 
