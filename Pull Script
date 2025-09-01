@@ -1,0 +1,191 @@
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Debris = game:GetService("Debris")
+local pullEvent = ReplicatedStorage:WaitForChild("pullAbility")
+local knockbackStrength = 150
+
+-- Animations
+local pullAnim = Instance.new("Animation")
+pullAnim.AnimationId = "rbxassetid://121273754785371" -- player pull/startup anim
+
+local comboAnim = Instance.new("Animation")
+comboAnim.AnimationId = "rbxassetid://100397897638997" -- player combo anim
+
+local enemyAnim = Instance.new("Animation")
+enemyAnim.AnimationId = "rbxassetid://107247304560127" -- enemy hit reaction anim
+
+-- Settings
+local pullRadius = 40
+local pullDuration = 1
+local pullDistance = 5 -- studs in front of player where enemies will be placed
+local spacing = 2-- studs spacing between multiple enemies
+
+pullEvent.OnServerEvent:Connect(function(player)
+	local char = player.Character
+	local humanoid = char:WaitForChild("Humanoid")
+	if not char then return end
+
+	local root = char:FindFirstChild("HumanoidRootPart")
+	local hum = char:FindFirstChildOfClass("Humanoid")
+	local animator = hum and hum:FindFirstChildOfClass("Animator")
+	if not root or not hum or not animator then return end
+
+	-- Step 1: Play pull/startup animation
+	local pullTrack = animator:LoadAnimation(pullAnim)
+	pullTrack:Play()
+
+	-- Optional VFX
+	local vfxTemplate = ReplicatedStorage:FindFirstChild("pullVfx") and ReplicatedStorage.pullVfx:FindFirstChild("Part")
+	if vfxTemplate then
+		local vfx = vfxTemplate:Clone()
+		vfx.CFrame = root.CFrame
+		vfx.Anchored = true
+		vfx.Parent = char
+		Debris:AddItem(vfx, 1)
+	end
+
+	-- Step 2: Collect valid targets within radius BEFORE delay
+	local targets = {}
+	for _, plr in pairs(game.Players:GetPlayers()) do
+		if plr ~= player and plr.Character then
+			local otherChar = plr.Character
+			local otherRoot = otherChar:FindFirstChild("HumanoidRootPart")
+			local otherHum = otherChar:FindFirstChildOfClass("Humanoid")
+			local enemyAnimator = otherHum and otherHum:FindFirstChildOfClass("Animator")
+
+			if otherRoot and otherHum and enemyAnimator and otherHum.Health > 0 then
+				local dist = (otherRoot.Position - root.Position).Magnitude
+				if dist <= pullRadius then
+					table.insert(targets, {
+						char = otherChar,
+						root = otherRoot,
+						hum = otherHum,
+						animator = enemyAnimator,
+					})
+				end
+			end
+		end
+	end
+
+	-- Step 3: Teleport enemies instantly in front, anchor and face player
+	for i, target in ipairs(targets) do
+		local otherRoot = target.root
+		local otherHum = target.hum
+		local enemyAnimator = target.animator
+
+		local forwardVector = root.CFrame.LookVector
+		local rightVector = root.CFrame.RightVector
+		local offset = rightVector * ((i - 1) * spacing - ((#targets - 1) * spacing) / 2)
+
+		local targetPosition = root.Position + forwardVector * pullDistance + offset
+
+		-- Teleport instantly
+		otherRoot.CFrame = CFrame.new(targetPosition, root.Position)
+
+		-- Anchor to freeze enemy in place
+		otherRoot.Anchored = true
+
+		-- Unanchor after pullDuration
+		task.delay(pullDuration, function()
+			if otherRoot then
+				otherRoot.Anchored = false
+			end
+		end)
+	end
+
+	-- Step 4: Wait briefly for enemies to settle
+	task.wait(0.2) -- adjust timing if needed
+
+	-- Step 5: Play combo animation on player
+	local comboTrack = animator:LoadAnimation(comboAnim)
+	game:GetService("ContentProvider"):PreloadAsync({comboTrack})
+	comboTrack:Play()
+	
+	comboTrack:GetMarkerReachedSignal("Hit"):Connect(function()
+		print("Impact Frames") 
+		local lightingService = game:GetService('Lighting')
+		local if1 = lightingService:FindFirstChild('IF1')
+		
+		if1.Enabled = true
+		local charHighlight = Instance.new('Highlight')
+		charHighlight.Parent = char
+		charHighlight.FillTransparency = 0
+		charHighlight.FillColor = Color3.new(0, 0, 0)
+		charHighlight.OutlineColor = Color3.new(0, 0, 0)
+	end)
+	
+	comboTrack:GetMarkerReachedSignal("Hit2"):Connect(function()
+		local lightingService = game:GetService("Lighting")
+		local if1 = lightingService:FindFirstChild('IF1')
+		local if2 = lightingService:FindFirstChild('IF2')
+		
+		if1.Enabled = false
+		if2.Enabled = true
+		local charHighlight = Instance.new('Highlight')
+		charHighlight.Parent = char
+		charHighlight.FillTransparency = 0
+		charHighlight.FillColor = Color3.new(1, 1, 1)
+		charHighlight.OutlineColor = Color3.new(1, 1, 1)
+	end)
+	
+	comboTrack:GetMarkerReachedSignal("Hit3"):Connect(function()
+		local lightingService = game:GetService("Lighting")
+		local if1 = lightingService:FindFirstChild('IF1')
+		local if2 = lightingService:FindFirstChild('IF2')
+
+		if1.Enabled = true
+		if2.Enabled = false
+		local charHighlight = Instance.new('Highlight')
+		charHighlight.Parent = char
+		charHighlight.FillTransparency = 0
+		charHighlight.FillColor = Color3.new(0, 0, 0)
+		charHighlight.OutlineColor = Color3.new(0, 0, 0)
+	end)
+	
+	comboTrack:GetMarkerReachedSignal("HitEnd"):Connect(function()
+		local lightingService = game:GetService("Lighting")
+		local if1 = lightingService:FindFirstChild('IF1')
+		local if2 = lightingService:FindFirstChild('IF2')
+
+		if1.Enabled = false
+		if2.Enabled = false
+		
+		local charHighlight = Instance.new('Highlight')
+		charHighlight.Parent = char
+		charHighlight.FillTransparency = 1
+		charHighlight.OutlineTransparency = 1
+	end)
+
+
+	
+	
+
+	
+	-- Step 6: Play enemy reaction animations simultaneously
+	for _, target in ipairs(targets) do
+		local enemyTrack = target.animator:LoadAnimation(enemyAnim)
+		enemyTrack:Play()
+	end
+	-- Step 7: Apply timed damage
+	task.wait(0.4) -- First hit
+	for _, target in ipairs(targets) do
+		if target.hum and target.hum.Health > 0 then
+			target.hum:TakeDamage(10)
+		end
+	end
+
+	task.wait(0.6) -- Second hit
+	for _, target in ipairs(targets) do
+		if target.hum and target.hum.Health > 0 then
+			target.hum:TakeDamage(10)
+		end
+	end
+
+	task.wait(0.6) -- Third hit
+	for _, target in ipairs(targets) do
+		if target.hum and target.hum.Health > 0 then
+			target.hum:TakeDamage(20)
+			local direction = (target.root.Position - root.Position).Unit
+			target.root.Velocity = direction * knockbackStrength
+		end
+	end
+end)
