@@ -1,0 +1,29 @@
+# script for HP update 
+local healthUpdateEvent = game.ReplicatedStorage:WaitForChild("HealthUpdateEvent") --Get RemoteFunction
+
+healthUpdateEvent.OnClientEvent:Connect(function(character, healthPercent) --Get health update signals from server
+	if character and character:FindFirstChild("Head") then --Make sure character exists
+		local healthBar = character.Head:FindFirstChild("HealthBar") --Find heath bar attached to head
+		if healthBar then
+			healthBar.HealthBarBackground.HealthBarFill.Size = UDim2.new(healthPercent, 0, 1, 0) --Resize health bar 
+			healthBar.HealthBarBackground.HealthText.Text = math.floor(healthPercent * 100).."%" --Update health bar text
+			if healthPercent > 0.8 then
+				healthBar.HealthBarBackground.HealthBarFill.BackgroundColor3 = Color3.new(0, 1, 0)
+			elseif healthPercent > 0.6 then
+				healthBar.HealthBarBackground.HealthBarFill.BackgroundColor3 = Color3.new(1, 1, 0) --Changes healthbar to green when healthy
+			elseif healthPercent > 0.4 then
+				healthBar.HealthBarBackground.HealthBarFill.BackgroundColor3 = Color3.new(1, 0.666667, 0) --Changes health bar to orange when injured
+			else
+				healthBar.HealthBarBackground.HealthBarFill.BackgroundColor3 = Color3.new(1, 0, 0) --Changes health bar to red when in critical health
+			end
+		end
+	end
+end)
+
+local Player = game.Players.LocalPlayer --Disable default Roblox health bar
+local StarterGui = game:GetService("StarterGui")
+StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.Health, false)
+-- Resets combo if idle too long
+game:GetService("RunService").Heartbeat:Connect(resetCombo)
+
+#
