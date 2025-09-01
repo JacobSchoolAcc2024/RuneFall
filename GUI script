@@ -1,0 +1,145 @@
+# script fpor closing pages
+local button = script.Parent
+local frame = button.Parent
+button.MouseButton1Click:Connect(function()
+	frame.Visible = false
+end)
+
+#script for tutorial and BGM page
+local button = script.Parent
+local settingsMenu = script.Parent.Parent:WaitForChild("TutorialFrame") 
+button.MouseButton1Click:Connect(function()
+	settingsMenu.Visible = not settingsMenu.Visible
+end)
+
+local button = script.Parent
+local settingsMenu = script.Parent.Parent:WaitForChild("BGMFrame") 
+button.MouseButton1Click:Connect(function()
+	settingsMenu.Visible = not settingsMenu.Visible
+end)
+
+# script for backgorund music system
+local sound = game:GetService("SoundService"):WaitForChild("BackgroundMusic")
+local playPauseButton = script.Parent
+
+local function togglePlayPause()
+	if sound.IsPlaying then
+		sound:Pause()
+		playPauseButton.Text = "Music: Off"
+	else
+		sound:Play()
+		playPauseButton.Text = "Music: On"
+	end
+end
+
+playPauseButton.Text = sound.IsPlaying and "Music: On" or "Music: Off"
+
+playPauseButton.MouseButton1Click:Connect(togglePlayPause)
+
+local sound = game:GetService("SoundService"):WaitForChild("BackgroundMusic")
+local TrackButton = script.Parent
+
+local tracks = {
+	{id = "rbxassetid://100958173074461", name = "1"},
+	{id = "rbxassetid://86813319012785", name = "2"},
+	{id = "rbxassetid://93013958793556", name = "3"},
+}
+
+local soundService = game:GetService("SoundService")
+if soundService:GetAttribute("CurrentTrackIndex") == nil then
+	soundService:SetAttribute("CurrentTrackIndex", 1)
+end
+
+local function switchTrack()
+	local currentIndex = soundService:GetAttribute("CurrentTrackIndex")
+	currentIndex = currentIndex + 1
+	if currentIndex > #tracks then
+		currentIndex = 1
+	end
+
+	soundService:SetAttribute("CurrentTrackIndex", currentIndex)
+
+	local track = tracks[currentIndex]
+	sound.SoundId = track.id
+	if sound.IsPlaying then
+		sound:Play()
+	end
+
+	TrackButton.Text = "Track " .. track.name
+end
+
+local initialIndex = soundService:GetAttribute("CurrentTrackIndex")
+TrackButton.Text = "Track " .. tracks[initialIndex].name
+
+TrackButton.MouseButton1Click:Connect(switchTrack)
+
+local button = script.Parent
+local player = game.Players.LocalPlayer
+local playerGui = player:WaitForChild("PlayerGui")
+local bgm = game:GetService("SoundService"):WaitForChild("BackgroundMusic")
+
+local volumeLevels = {0, 0.1, 0.2, 0.5, 0.75, 0.8, 0.9, 1}
+local currentVolumeIndex = #volumeLevels
+
+local function updateButtonText()
+	button.Text = "Volume: " .. math.floor(bgm.Volume * 100) .. "%"
+end
+
+button.MouseButton1Click:Connect(function()
+	currentVolumeIndex = currentVolumeIndex % #volumeLevels + 1
+	bgm.Volume = volumeLevels[currentVolumeIndex]
+	updateButtonText()
+end)
+
+local steps = {
+	"Welcome to the game!",
+	"This game is called Shibuya Battleground",
+	"Use WASD to move around.",
+	"Use F to stop the time nearby.",
+	"Use R to pull your rivals and punch them.",
+	"Use E to release a blue ball to attack your rivals.",
+	"Check your kills and deaths on the leaderboard.",
+	"Good luck, have fun!"
+}
+
+local currentStep = 1
+
+local instructionLabel = script.Parent:WaitForChild("TextLabel")
+local NextPageButton = script.Parent:WaitForChild("NextPageButton")
+local LastPageButton = script.Parent:WaitForChild("LastPageButton")
+
+local function updateStep()
+	instructionLabel.Text = steps[currentStep]
+	LastPageButton.Visible = currentStep > 1
+	NextPageButton.Text = currentStep == #steps and "Finish" or "Next Page"
+end
+
+updateStep()
+
+NextPageButton.MouseButton1Click:Connect(function()
+	if currentStep < #steps then
+		currentStep += 1
+		updateStep()
+	else
+		script.Parent.Visible = false
+		currentStep = 1
+		updateStep()
+		local player = game.Players.LocalPlayer
+		if player:FindFirstChild("HasCompletedTutorial") then
+			player.HasCompletedTutorial.Value = true
+		end
+	end
+end)
+
+LastPageButton.MouseButton1Click:Connect(function()
+	if currentStep > 1 then
+		currentStep -= 1
+		updateStep()
+	end
+end)
+
+
+updateButtonText()
+
+
+
