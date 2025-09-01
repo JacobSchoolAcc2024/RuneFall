@@ -1,42 +1,42 @@
 local Players = game:GetService("Players")
 
-Players.PlayerAdded:Connect(function(Player)
+Players.PlayerAdded:Connect(function(Player) -- Runs code whenever a new player joins
 	local leaderstats = Instance.new("Folder")
 	leaderstats.Name = "leaderstats"
 	leaderstats.Parent = Player
 
-	local Kills = Instance.new("NumberValue")
+	local Kills = Instance.new("NumberValue") -- Amount of kills display 
 	Kills.Name = "⚔ Kills"
 	Kills.Value = 0
 	Kills.Parent = leaderstats
 
-	local Deaths = Instance.new("NumberValue")
+	local Deaths = Instance.new("NumberValue") -- Amount of deaths display
 	Deaths.Name = "💀 Deaths"
 	Deaths.Value = 0
 	Deaths.Parent = leaderstats
 	
-	local KDA = Instance.new("NumberValue")
+	local KDA = Instance.new("NumberValue") -- Average Kills to Death ratio (kills / death)
 	KDA.Name = "⭐ KDA"
 	KDA.Value = 0
 	KDA.Parent = leaderstats
 	
-	local function UpdateKDA()
-		KDA.Value = Kills.Value / math.max(Deaths.Value, 1)
+	local function UpdateKDA() -- Updates the leaderboard whenever a player's stat changes
+		KDA.Value = Kills.Value / math.max(Deaths.Value, 1) -- math.max ensures no divide by 0
 	end
 
 	Kills.Changed:Connect(UpdateKDA)
 	Deaths.Changed:Connect(UpdateKDA)
 
-	Player.CharacterAdded:Connect(function(Character)
+	Player.CharacterAdded:Connect(function(Character) -- Handles when player spawns
 		local Humanoid = Character:WaitForChild("Humanoid")
 
-		Humanoid.Died:Connect(function()
-			Deaths.Value = Deaths.Value + 1
-			local Tag = Humanoid:FindFirstChild("creator")
+		Humanoid.Died:Connect(function() -- When a player dies
+			Deaths.Value = Deaths.Value + 1 
+			local Tag = Humanoid:FindFirstChild("creator") -- Checks if someone killed them
 			if Tag and Tag.Value and Tag.Value:IsA("Player") then
 				local KilledPlayer = Tag.Value
 				local KillsStat = KilledPlayer:FindFirstChild("leaderstats"):FindFirstChild("⚔ Kills")
-				if KillsStat then
+				if KillsStat then -- Increases killer's stats
 					KillsStat.Value = KillsStat.Value + 1
 				end
 			end
