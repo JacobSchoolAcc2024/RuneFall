@@ -1,37 +1,37 @@
 # server side script for the combat 
 game.ReplicatedStorage.MainEvent.OnServerEvent:Connect(function(plr)
 	spawn(function()
-		plr.Character.Humanoid.WalkSpeed = 7
+		plr.Character.Humanoid.WalkSpeed = 7 -- Slows players briefly when attacking
 		task.wait(.5)
-		plr.Character.Humanoid.WalkSpeed = 16
+		plr.Character.Humanoid.WalkSpeed = 16 -- Revert speed to original 
 	end)
 
-	local hitbox = Instance.new("Part")
+	local hitbox = Instance.new("Part") -- Creates hitbox part
 	
 	hitbox.Parent = workspace
 	hitbox.CanCollide = false
 	hitbox.Anchored = true
-	hitbox.Size = Vector3.new(7,7,7)
-	hitbox.BrickColor = BrickColor.new("Really red")
-	hitbox.Transparency = 1
-	hitbox.CFrame = plr.Character.HumanoidRootPart.CFrame * CFrame.new(0,0,-5)
-	game.Debris:AddItem(hitbox,1)
+	hitbox.Size = Vector3.new(7,7,7) -- Hitbox size
+	hitbox.BrickColor = BrickColor.new("Really red") -- Hitbox color for testing
+	hitbox.Transparency = 1 -- Makes hitbox invisible
+	hitbox.CFrame = plr.Character.HumanoidRootPart.CFrame * CFrame.new(0,0,-5) -- Positions hitbox in front of the player 
+	game.Debris:AddItem(hitbox,1) -- Destroys after a second
 	
-	local BV2 = Instance.new("BodyVelocity")
-	BV2.MaxForce, BV2.Velocity = Vector3.new(5e4, 5e2, 5e4), plr.Character.HumanoidRootPart.CFrame.lookVector * 10
-	BV2.Parent = plr.Character.HumanoidRootPart
+	local BV2 = Instance.new("BodyVelocity") -- Push effect when the player punches
+	BV2.MaxForce, BV2.Velocity = Vector3.new(5e4, 5e2, 5e4), plr.Character.HumanoidRootPart.CFrame.lookVector * 10 -- Max force applied
+	BV2.Parent = plr.Character.HumanoidRootPart -- Pushes player forward slightly when attacking
 	game.Debris:AddItem(BV2, 0.16)
 
 	
-	local hitboxcooldown = false
-	hitbox.Touched:Connect(function(hit)
-	if hit.Parent.Name ~= plr.Name and hit.Parent:FindFirstChild("Humanoid") then
+	local hitboxcooldown = false -- Prevents multiple hits from being registered simultaneously 
+	hitbox.Touched:Connect(function(hit) -- Detects when hitbox is touching something
+	if hit.Parent.Name ~= plr.Name and hit.Parent:FindFirstChild("Humanoid") then -- Only damages players with humanoids
 		if hitboxcooldown == true then return end
-		hitboxcooldown = true
+		hitboxcooldown = true -- Block multiple hits
 		
-		hit.Parent:FindFirstChild("Humanoid"):TakeDamage(5)
+		hit.Parent:FindFirstChild("Humanoid"):TakeDamage(10) -- Damage taken when in contact with hitbox
 		
-		local humanoid = hit.Parent:FindFirstChild("Humanoid")
+		local humanoid = hit.Parent:FindFirstChild("Humanoid") -- Adds creator tag so kills count for leaderboard
         local existingTag = humanoid:FindFirstChild("creator")
         if existingTag then
             existingTag:Destroy()
@@ -42,32 +42,32 @@ game.ReplicatedStorage.MainEvent.OnServerEvent:Connect(function(plr)
         creatorTag.Parent = humanoid
 		game:GetService("Debris"):AddItem(creatorTag, 2)
 		
-		local vfx = game.ReplicatedStorage.VFX.Attachment:Clone()
+		local vfx = game.ReplicatedStorage.VFX.Attachment:Clone() -- Adding visual and audio effects
 		vfx.Parent = hit.Parent.HumanoidRootPart
 		local sound = script.Punch:Clone()
 		sound.Parent = hit.Parent.HumanoidRootPart
 		sound:Play()
 		game.Debris:AddItem(sound, 2)
 		
-		local BV = Instance.new("BodyVelocity")
+		local BV = Instance.new("BodyVelocity") -- Adds a knockback on the enemy when attacked
 		BV.MaxForce, BV.Velocity = Vector3.new(5e4, 5e2, 5e4), plr.Character.HumanoidRootPart.CFrame.lookVector * 10
 		BV.Parent = hit.Parent.HumanoidRootPart
 		game.Debris:AddItem(BV, 0.16)
 		
-		local bool = Instance.new("BoolValue")
+		local bool = Instance.new("BoolValue") -- Adding a stun phase where the enemy will be unable to move
 		bool.Name = "Stunned"
 		bool.Parent = hit.Parent
-		game.Debris:AddItem(bool, 1)
+		game.Debris:AddItem(bool, 1) -- Removes stun after 1 second
 
 		
-		spawn(function()
+		spawn(function() -- Emit particle effects for VFX
 			for i,v in vfx:GetChildren() do
 				if v:IsA("ParticleEmitter") then
 					v:Emit(v:GetAttribute("EmitCount"))
 				end
 			end
 		end)
-		game:GetService("ContentProvider"):PreloadAsync({vfx})
+		game:GetService("ContentProvider"):PreloadAsync({vfx}) -- Preload VFX for smoother animations
 		game.Debris:AddItem(vfx, 1.5)
 		task.wait(1)
 		hitboxcooldown = false
@@ -77,83 +77,65 @@ game.ReplicatedStorage.MainEvent.OnServerEvent:Connect(function(plr)
 	
 end)
 # script for blue ball skill
-local HollowPurpleEvent = game.ReplicatedStorage:WaitForChild("HollowPurpleEvent")
-local TS = game:GetService("TweenService")
-local SS = game:GetService("SoundService")
-
-local Blue = game.ServerStorage:WaitForChild("PartBlue")
-
-HollowPurpleEvent.OnServerEvent:Connect(function(plr, Endpos)
-	local Character = plr.Character
-	
-	local BlueClone = Blue:Clone()
-	BlueClone.CFrame = Character.HumanoidRootPart.CFrame * CFrame.new(-1, 3, -10)
-	BlueClone.Parent = game.Workspace
-	
-	local StartPos = BlueClone.Position
-	local Direction = (Endpos - StartPos).Unit*200
-	local RayCastParams = RaycastParams.new()
-	RayCastParams.FilterType = Enum.RaycastFilterType.Exclude
-	RaycastParams.FilterDescendantsInstances = {Character:GetDescendants()}
-	
-	local Duration = (Endpos - StartPos). Magnitude / 70
-	local BlueTween = TS:Create(BlueClone, TweenInfo.new(Duration, Enum.EasingStyle.Cubic, Enum.EasingStyle.Out), {Position = Endpos})
-	BlueTween:Play()
-	
-	local RayCast = workspace:Raycast(StartPos, Direction, RayCastParams)
-	
-	if RayCast then
-		wait(Duration - 0.5)
-		local 
-	end
-end)
-
+-- Services
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local blueAbilityEvent = ReplicatedStorage:WaitForChild("blueAbility")
-local debris = game:GetService("Debris")
+local Debris = game:GetService("Debris")
 local RunService = game:GetService("RunService")
+local ContentProvider = game:GetService("ContentProvider")
 
+-- Events & Templates
+local blueAbilityEvent = ReplicatedStorage:WaitForChild("blueAbility")
+local blueBallTemplate = ReplicatedStorage:WaitForChild("blueBall")
+
+-- Preload animation and sound
 local anim = Instance.new("Animation")
 anim.AnimationId = "rbxassetid://75381997724618"
+ContentProvider:PreloadAsync({anim})
 
 local sound = Instance.new("Sound")
 sound.SoundId = "rbxassetid://102891804208309"
 sound.Volume = 0.1
 sound.PlayOnRemove = false
+ContentProvider:PreloadAsync({sound})
 
-local blueBallTemplate = ReplicatedStorage:WaitForChild("blueBall")
-local pullRadius = 15
-local pullStrength = 500
+-- Blue ability settings
 local ballLifetime = 3
-local BlueClone = blueBallTemplate:Clone()
 
+-- Ability event
 blueAbilityEvent.OnServerEvent:Connect(function(player)
-	
+	-- Fetch disabledAbilities from ReplicatedStorage
+	local disabledAbilities = ReplicatedStorage:GetAttribute("DisabledAbilities") or {}
+
+	-- Prevent ability if player is frozen by timestop
+	if disabledAbilities[player] then
+		print(player.Name .. " is frozen and cannot use abilities!")
+		return
+	end
+
 	local char = player.Character
 	if not char then return end
 
 	local root = char:FindFirstChild("HumanoidRootPart")
-	if not root then return end
-
 	local hum = char:FindFirstChildOfClass("Humanoid")
-	if not hum then return end
+	if not root or not hum then return end
 
+	-- Play animation
 	local track = hum:LoadAnimation(anim)
 	track:Play()
 
-	-- Spawn the ball
+	-- Spawn the blue ball
 	local ball = blueBallTemplate:Clone()
 	ball.Size = Vector3.new(5, 5, 5)
 	ball.CFrame = root.CFrame + root.CFrame.LookVector * 3
 	ball.Parent = workspace
 
-	-- Give it forward velocity
+	-- Forward velocity
 	local velocity = Instance.new("BodyVelocity")
 	velocity.Velocity = root.CFrame.LookVector * 100
 	velocity.MaxForce = Vector3.new(1e5, 1e5, 1e5)
 	velocity.Parent = ball
 
-	-- Spinning ring effect (optional)
+	-- Spinning ring effect
 	local ring = Instance.new("Part")
 	ring.Name = "SpinRing"
 	ring.Size = Vector3.new(10, 0.2, 0.2)
@@ -177,27 +159,30 @@ blueAbilityEvent.OnServerEvent:Connect(function(player)
 			ring.CFrame = ring.CFrame * CFrame.Angles(0, math.rad(3), math.rad(2))
 		end
 	end)
-	
-	sound.Parent = workspace
-	sound:Play()
-	
+
+	-- Play sound from the ball
+	local ballSound = sound:Clone()
+	ballSound.Parent = ball
+	ballSound:Play()
+	Debris:AddItem(ballSound, 5)
+
+	-- Ball hit logic
 	ball.Touched:Connect(function(hit)
 		local hitChar = hit:FindFirstAncestorOfClass("Model")
 		local hitPlayer = hitChar and game.Players:GetPlayerFromCharacter(hitChar)
 
 		if hitChar and hitPlayer and hitPlayer ~= player then
 			local hitHum = hitChar:FindFirstChildOfClass("Humanoid")
-			local hitRoot = hitChar:FindFirstChild("HumanoidRootPart")
-			if hitHum and hitRoot then
+			if hitHum then
 				local existingTag = hitHum:FindFirstChild("creator")
-				if existingTag then
-					existingTag:Destroy()
-				end
+				if existingTag then existingTag:Destroy() end
+
 				local creatorTag = Instance.new("ObjectValue")
 				creatorTag.Name = "creator"
-				creatorTag.Value = player 
+				creatorTag.Value = player
 				creatorTag.Parent = hitHum
-				debris:AddItem(creatorTag, 2)
+				Debris:AddItem(creatorTag, 2)
+
 				hitHum:TakeDamage(1)
 			end
 		end
@@ -206,97 +191,128 @@ blueAbilityEvent.OnServerEvent:Connect(function(player)
 	-- Cleanup after lifetime
 	task.delay(ballLifetime, function()
 		spinning = false
+		spinConn:Disconnect()
 		if ball and ball.Parent then
 			ball:Destroy()
 		end
 	end)
-
-	debris:AddItem(ball, ballLifetime + 2)
+	Debris:AddItem(ball, ballLifetime + 2)
 end)
+
 # script for welding
 local PS = game:GetService('Players')
 local SS = game:GetService('ServerStorage')
 
-local ReferenceDummy : Model = SS.ReferenceDummy
+local ReferenceDummy : Model = SS.ReferenceDummy -- Reference Dummy
 
-local function weld(partA : BasePart, partB : BasePart, offsetCFrame : CFrame)
-	partA.CFrame = partB.CFrame * offsetCFrame
+local function weld(partA : BasePart, partB : BasePart, offsetCFrame : CFrame) -- Function to weld one part to another 
+	partA.CFrame = partB.CFrame * offsetCFrame -- Position part A relative to part B using offset
 	
-	local weldConstraint = Instance.new('WeldConstraint')
+	local weldConstraint = Instance.new('WeldConstraint') -- Creates a weld constraint so part A is attached to part B
 	weldConstraint.Part0 = partA
 	weldConstraint.Part1 = partB
 	weldConstraint.Parent = partA
 end
 
-local function onCharacterAdded(character : Model)
-	local newWeld = ReferenceDummy.CER:Clone()
-	local weldPart = character:WaitForChild(newWeld.WeldPart.Value.Name)
-	weld(newWeld, weldPart, newWeld.WeldPart.Value.CFrame:Inverse() * newWeld.CFrame)
-	newWeld.Parent = character
-	local newWeldL = ReferenceDummy.CEL:Clone()
-	local weldPartL = character:WaitForChild(newWeldL.WeldPart.Value.Name)
-	weld(newWeldL, weldPartL, newWeldL.WeldPart.Value.CFrame:Inverse() * newWeldL.CFrame)
+local function onCharacterAdded(character : Model) -- Runs when character is spawned
+	local newWeld = ReferenceDummy.CER:Clone() -- Clone the right side attachment (CER) from the reference dummy
+	local weldPart = character:WaitForChild(newWeld.WeldPart.Value.Name) -- Finds the part inside the player's character to weld to
+	weld(newWeld, weldPart, newWeld.WeldPart.Value.CFrame:Inverse() * newWeld.CFrame) -- Welds to the correct position
+	newWeld.Parent = character -- Parent the new part to the character, making it move with them
+	local newWeldL = ReferenceDummy.CEL:Clone() -- Clones left side attachment (CEL)
+	local weldPartL = character:WaitForChild(newWeldL.WeldPart.Value.Name) -- Finds part inside the player's character to weld to
+	weld(newWeldL, weldPartL, newWeldL.WeldPart.Value.CFrame:Inverse() * newWeldL.CFrame) -- Weld it to the correct position
 	newWeldL.Parent = character
 end
 
-PS.PlayerAdded:Connect(function(player : Player)
+PS.PlayerAdded:Connect(function(player : Player) -- When a new player joins, add into CharacterAdded
 	player.CharacterAdded:Connect(onCharacterAdded)
 end)
 
-for i, player in pairs (PS:GetPlayers()) do
+for i, player in pairs (PS:GetPlayers()) do -- Runs script after players join for players who are already in the game
 	player.CharacterAdded:Connect(onCharacterAdded)
 	
-	if (player.Character) then
+	if (player.Character) then -- If their character exists then attach weld to them
 		onCharacterAdded(player.Character)
 	end
 end
 
-# script for time stop
+
+# script for updating server side hp bar
+
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Players = game:GetService("Players")
+local healthUpdateEvent = ReplicatedStorage:WaitForChild("HealthUpdateEvent") -- RemoteEvent to update health bar
+
+Players.PlayerAdded:Connect(function(player) -- Run code whenever a player joins
+	player.CharacterAdded:Connect(function(character) -- Runs code whenever a player spawns in
+		local humanoid = character:WaitForChild("Humanoid") -- Tracks health
+		local head = character:WaitForChild("Head") -- Attaches health bar to head
+		local healthBar = ReplicatedStorage.HealthBar:Clone() -- Clone the healthbar
+		healthBar.Adornee = head -- Attaches it to head
+		healthBar.Parent = head -- Parent it to the head
+		local function updateAllClients() -- Sends update to all clients
+			local healthPercent = humanoid.Health / humanoid.MaxHealth
+			healthUpdateEvent:FireAllClients(character, healthPercent)
+		end
+
+		humanoid.HealthChanged:Connect(updateAllClients) -- Connect humanoid health changes to update function
+		updateAllClients() -- Called once spawned to display full HP
+	end)
+end)
+
+#script for time stop
+-- Services
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
 local Lighting = game:GetService("Lighting")
+local ContentProvider = game:GetService("ContentProvider")
 
-local event = ReplicatedStorage:WaitForChild("timeAbility")
-local timeDome = ReplicatedStorage:WaitForChild("timeDome")
+-- Events
+local timeAbilityEvent = ReplicatedStorage:WaitForChild("timeAbility")
+local timeDomeTemplate = ReplicatedStorage:WaitForChild("timeDome")
 local VFXHandler = require(ReplicatedStorage:WaitForChild("VFXHandler"))
 
--- Animation
+-- Preload Animations
 local anim = Instance.new("Animation")
 anim.AnimationId = "rbxassetid://131445320966134"
+ContentProvider:PreloadAsync({anim})
 
--- Sound
+-- Preload Sound
 local sound = Instance.new("Sound")
 sound.SoundId = "rbxassetid://5294253171"
 sound.Volume = 0.5
 sound.PlayOnRemove = false
+ContentProvider:PreloadAsync({sound})
 
--- Keep track of frozen players
-local frozenPlayers = {}
+-- Tables
+local frozenPlayers = {}       -- Tracks anchored/frozen players
+local disabledAbilities = {}   -- Tracks ability restriction
 
--- Color correction effect
+-- Color Correction Effect
 local cc = Lighting:FindFirstChild("TimeStopCC") or Instance.new("ColorCorrectionEffect")
 cc.Name = "TimeStopCC"
 cc.Parent = Lighting
 cc.Saturation = 0
 
-event.OnServerEvent:Connect(function(player)
+-- Timestop Event
+timeAbilityEvent.OnServerEvent:Connect(function(player)
 	local char = player.Character
 	local root = char and char:FindFirstChild("HumanoidRootPart")
 	local hum = char and char:FindFirstChildOfClass("Humanoid")
-
 	if not root or not hum then return end
-	if frozenPlayers[player] then return end -- prevent double activation
+	if frozenPlayers[player] then return end
 
-	print(player.Name .. " used Time Ability!")
+	print(player.Name .. " activated Time Ability!")
 
 	-- Parameters
-	local db = 3 -- duration of timestop
+	local duration = 5
 	local range = 50
 
 	-- Clone and setup dome
-	local dome = timeDome:Clone()
+	local dome = timeDomeTemplate:Clone()
 	dome.CFrame = root.CFrame
 	dome.Size = Vector3.new(range, range, range)
 	dome.Anchored = true
@@ -334,14 +350,13 @@ event.OnServerEvent:Connect(function(player)
 	weld.Parent = ring
 
 	local spinning = true
-	local connection
-	connection = RunService.Heartbeat:Connect(function()
+	local spinConn = RunService.Heartbeat:Connect(function()
 		if spinning and ring and ring.Parent then
 			ring.CFrame = ring.CFrame * CFrame.Angles(0, math.rad(-2), 0)
 		end
 	end)
 
-	-- Freeze all players in range
+	-- Freeze players in range and disable abilities
 	local affectedPlayers = {}
 	for _, plr in ipairs(Players:GetPlayers()) do
 		if plr ~= player and plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") then
@@ -351,6 +366,7 @@ event.OnServerEvent:Connect(function(player)
 				if phum then
 					phum.WalkSpeed = 0
 					phum.JumpPower = 0
+					TweenService:Create(cc, TweenInfo.new(0.5), {Saturation = -1}):Play()
 				end
 				for _, part in ipairs(plr.Character:GetChildren()) do
 					if part:IsA("BasePart") then
@@ -358,23 +374,20 @@ event.OnServerEvent:Connect(function(player)
 					end
 				end
 				frozenPlayers[plr] = true
+				disabledAbilities[plr] = true
 				table.insert(affectedPlayers, plr)
-				print(plr.Name .. " frozen!")
+				print(plr.Name .. " is frozen and cannot use abilities!")
 			end
 		end
 	end
 
-	-- Darken screen
-	TweenService:Create(cc, TweenInfo.new(0.5), {Saturation = -1}):Play()
-
-	-- Cleanup after db seconds
-	task.delay(db, function()
+	-- Cleanup after duration
+	task.delay(duration, function()
 		spinning = false
-		connection:Disconnect()
+		spinConn:Disconnect()
 		ring:Destroy()
 		dome:Destroy()
 
-		-- Unfreeze players
 		for _, plr in ipairs(affectedPlayers) do
 			local phum = plr.Character and plr.Character:FindFirstChildOfClass("Humanoid")
 			if phum then
@@ -389,7 +402,8 @@ event.OnServerEvent:Connect(function(player)
 				end
 			end
 			frozenPlayers[plr] = nil
-			print("Time returned for " .. plr.Name)
+			disabledAbilities[plr] = nil
+			print(plr.Name .. " can use abilities again.")
 		end
 
 		-- Restore lighting
@@ -397,25 +411,6 @@ event.OnServerEvent:Connect(function(player)
 	end)
 end)
 
-# script for updating server side hp bar
+-- Expose disabledAbilities table to other scripts
+ReplicatedStorage:SetAttribute("DisabledAbilities", disabledAbilities)
 
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local Players = game:GetService("Players")
-local healthUpdateEvent = ReplicatedStorage:WaitForChild("HealthUpdateEvent")
-
-Players.PlayerAdded:Connect(function(player)
-	player.CharacterAdded:Connect(function(character)
-		local humanoid = character:WaitForChild("Humanoid")
-		local head = character:WaitForChild("Head")
-		local healthBar = ReplicatedStorage.HealthBar:Clone()
-		healthBar.Adornee = head
-		healthBar.Parent = head
-		local function updateAllClients()
-			local healthPercent = humanoid.Health / humanoid.MaxHealth
-			healthUpdateEvent:FireAllClients(character, healthPercent)
-		end
-
-		humanoid.HealthChanged:Connect(updateAllClients)
-		updateAllClients()
-	end)
-end)
